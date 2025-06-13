@@ -250,9 +250,8 @@ Partido 63: G61 vs. G62, 15:00, Estadio MetLife, Nueva York Nueva Jersey
             'GEODIS Park': 'Nashville',
             'Estadio Bank of America': 'Charlotte',
             'Estadio Camping World': 'Orlando',
-            // Consolidated multiple entries for Washington D.C. Audi Field
-            'Washington D.C. Audi Field': 'Washington D.C.', // Canonical name
-            'Washington D.C Audi Field': 'Washington D.C.', // As it appears in fixture text, points to canonical city
+            // Removed duplicate entry
+            'Washington D.C. Audi Field': 'Washington D.C.', // Canonical and covers 'Washington D.C Audi Field'
         };
 
         // Map of cities to their timezone offsets (EDT/PDT/CDT during June/July)
@@ -279,25 +278,24 @@ Partido 63: G61 vs. G62, 15:00, Estadio MetLife, Nueva York Nueva Jersey
             const matches = [];
             const lines = rawText.split('\n');
 
-            let currentStage = 'Fase de grupos'; // Default stage, updated by headers
-            let roundCounter = 1; // Default round, updated by headers
-            let lastParsedDateInfo = null; // Stores { day, month, year } from the most recent date line
+            let currentStage = 'Fase de grupos'; // Default stage
+            let roundCounter = 1; // Default round
+            let lastParsedDateInfo = null; // Stores { day, month, year }
 
-            // Regex for lines that explicitly declare a date (e.g., "Sábado, 14 de junio de 2025")
+            // Regex for lines that explicitly declare a date
             const dateDeclarationRegex = /^(Sábado|Domingo|Lunes|Martes|Miércoles|Jueves|Viernes), (\d{1,2}) de (enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre) de (\d{4})/;
-            // Regex for a single match entry within a line. The 'g' flag is crucial for matchAll.
-            // It captures: idNum, separator, team1, team2, time, and fullLocationString until the next 'Partido' or end of line.
-            const matchEntryDetailsRegex = /Partido (\d{1,2})( –|:)\s*(.+?) vs\. (.+?), (\d{2}:\d{2}),\s*(.+?)(?=(?:Partido \d{1,2})|$)/g;
+            // Regex for lines that contain a match entry
+            const matchEntryRegex = /Partido (\d{1,2})( –|:)\s*(.+?) vs\. (.+?), (\d{2}:\d{2}),\s*(.+)/;
 
             for (const line of lines) {
                 const trimmedLine = line.trim();
                 if (!trimmedLine) continue;
 
-                // 1. Check for stage headers and update current stage/roundCounter
+                // 1. Check for stage headers
                 if (trimmedLine.includes('Fase de grupos del Mundial de Clubes 2025')) {
                     currentStage = 'Fase de grupos';
                     roundCounter = 1;
-                    continue; // These are pure headers, skip processing as match/date
+                    continue;
                 } else if (trimmedLine.includes('Octavos de final')) {
                     currentStage = 'Octavos de final';
                     roundCounter = 2;
@@ -315,10 +313,10 @@ Partido 63: G61 vs. G62, 15:00, Estadio MetLife, Nueva York Nueva Jersey
                     roundCounter = 5;
                     continue;
                 } else if (trimmedLine.includes('(Todos los horarios son locales de las ciudades correspondientes')) {
-                    continue; // Skip instruction line
+                    continue;
                 }
 
-                // 2. Attempt to parse a date declaration. If it's a date line, update context.
+                // 2. Attempt to parse a date declaration.
                 const dateDeclMatch = trimmedLine.match(dateDeclarationRegex);
                 if (dateDeclMatch) {
                     lastParsedDateInfo = {
@@ -326,21 +324,14 @@ Partido 63: G61 vs. G62, 15:00, Estadio MetLife, Nueva York Nueva Jersey
                         month: monthMap[dateDeclMatch[3].toLowerCase()],
                         year: dateDeclMatch[4]
                     };
-                    // Do NOT continue here. A line can start with a date and then immediately list matches.
+                    // Do NOT continue here, as a date line might also contain match entries
                 }
 
-                // 3. Attempt to parse match entries from the current line using matchAll.
-                // Reset lastIndex for the global regex before using matchAll in a loop.
-                matchEntryDetailsRegex.lastIndex = 0;
-                const matchesInCurrentLine = [...trimmedLine.matchAll(matchEntryDetailsRegex)];
+                // 3. Attempt to parse a match entry.
+                const matchEntryMatch = trimmedLine.match(matchEntryRegex);
 
-                for (const matchEntry of matchesInCurrentLine) {
-                    const [, idNum, , team1Raw, team2Raw, time, fullLocationString] = matchEntry;
-
-                    if (!lastParsedDateInfo) {
-                        console.warn(`Skipping match P${idNum}: No date information available from previous lines for "${trimmedLine}".`);
-                        continue; // Cannot parse match without a date context.
-                    }
+                if (matchEntryMatch && lastParsedDateInfo) {
+                    const [, idNum, , team1Raw, team2Raw, time, fullLocationString] = matchEntryMatch;
 
                     const dateString = `${lastParsedDateInfo.year}-${lastParsedDateInfo.month}-${lastParsedDateInfo.day}`;
 
@@ -390,8 +381,8 @@ Partido 63: G61 vs. G62, 15:00, Estadio MetLife, Nueva York Nueva Jersey
 
                     matches.push({
                         id: `P${idNum}`,
-                        stage: currentStage, // Stage from latest header
-                        round: roundCounter, // Round from latest header
+                        stage: currentStage,
+                        round: roundCounter,
                         team1: team1,
                         team2: team2,
                         score1: null,
@@ -442,7 +433,6 @@ Partido 63: G61 vs. G62, 15:00, Estadio MetLife, Nueva York Nueva Jersey
                         let team1SourceId = matchInConsideration.dependsOn[0];
                         let team2SourceId = matchInConsideration.dependsOn[1];
 
-                        // Resolve qualifier placeholders (e.g., '1A', '2B', 'G53') to actual match IDs (e.g., 'P1', 'P2', 'P53')
                         team1SourceId = qualifierToMatchId[team1SourceId] || team1SourceId;
                         team2SourceId = qualifierToMatchId[team2SourceId] || team2SourceId;
 
