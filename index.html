@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixture Interactivo Mundial de Clubes FIFA 2025</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for better aesthetics if needed, otherwise Tailwind is preferred */
+        .match-card {
+            min-height: 200px; /* Ensure consistent card height */
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-pink-50 p-6 antialiased">
+    <header class="text-center mb-10">
+        <h1 class="text-5xl font-extrabold text-cyan-600 leading-tight">
+            Fixture Interactivo <br /> Mundial de Clubes FIFA 2025
+        </h1>
+        <p class="mt-3 text-xl text-cyan-600">
+            Carga los resultados y ve a los equipos avanzar en la llave.
+        </p>
+    </header>
+
+    <main id="fixture-container" class="flex flex-col items-center w-full">
+        <p class="text-xl text-gray-600">Cargando fixture...</p>
+    </main>
+
+    <footer class="mt-12 text-center text-gray-500 text-sm">
+        <p>&copy; 2025 Fixture Mundial de Clubes Interactivo. Todos los derechos reservados.</p>
+        <p>Los datos de los partidos han sido cargados de la información proporcionada.</p>
+    </footer>
+
+    <script>
+        // Mapa para asociar equipos con emojis de bandera y país de origen (solo para referencia)
+        const teamFlags = {
+            'Inter Miami': { flag: '🇺🇸', country: 'USA' },
+            'Al Ahly': { flag: '🇪🇬', country: 'Egipto' },
+            'Bayern Munich': { flag: '🇩🇪', country: 'Alemania' },
+            'Auckland City FC': { flag: '🇳🇿', country: 'Nueva Zelanda' },
+            'PSG': { flag: '🇫🇷', country: 'Francia' },
+            'Atlético de Madrid': { flag: '🇪🇸', country: 'España' },
+            'Palmeiras': { flag: '🇧🇷', country: 'Brasil' },
+            'Porto': { flag: '🇵🇹', country: 'Portugal' },
+            'Botafogo': { flag: '🇧🇷', country: 'Brasil' },
+            'Seattle Sounders': { flag: '🇺🇸', country: 'USA' },
+            'Chelsea': { flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', country: 'Inglaterra' },
+            'Los Angeles FC': { flag: '🇺🇸', country: 'USA' },
+            'Boca': { flag: '🇦🇷', country: 'Argentina' },
+            'Benfica': { flag: '🇵🇹', country: 'Portugal' },
+            'Flamengo': { flag: '🇧🇷', country: 'Brasil' },
+            'Esperance Sportive de Tunis': { flag: '🇹🇳', country: 'Túnez' },
+            'Fluminense': { flag: '🇧🇷', country: 'Brasil' },
+            'Borussia Dortmund': { flag: '🇩🇪', country: 'Alemania' },
+            'River Plate': { flag: '🇦🇷', country: 'Argentina' },
+            'Urawa Red Diamonds': { flag: '🇯🇵', country: 'Japón' },
+            'Ulsan HD': { flag: '🇰🇷', country: 'Corea del Sur' },
+            'Mamelodi Sundowns FC': { flag: '🇿🇦', country: 'Sudáfrica' },
+            'CF Monterrey': { flag: '🇲🇽', country: 'México' },
+            'Inter de Milán': { flag: '🇮🇹', country: 'Italia' },
+            'Manchester City': { flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', country: 'Inglaterra' },
+            'Wydad AC': { flag: '🇲🇦', country: 'Marruecos' },
+            'Real Madrid': { flag: '🇪🇸', country: 'España' },
+            'Al Hilal': { flag: '🇸🇦', country: 'Arabia Saudita' },
+            'Pachuca': { flag: '🇲🇽', country: 'México' },
+            'FC Salzburgo': { flag: '🇦🇹', country: 'Austria' },
+            'Al Ain FC': { flag: '🇦🇪', country: 'Emiratos Árabes Unidos' },
+            'Juventus': { flag: '🇮🇹', country: 'Italia' },
+            // Los siguientes son placeholders que se llenarán dinámicamente
+            '1A': { flag: '?', country: 'Ganador Grupo A' }, '2B': { flag: '?', country: 'Segundo Grupo B' },
+            '1C': { flag: '?', country: 'Ganador Grupo C' }, '2D': { flag: '?', country: 'Segundo Grupo D' },
+            '1B': { flag: '?', country: 'Ganador Grupo B' }, '2A': { flag: '?', country: 'Segundo Grupo A' },
+            '1D': { flag: '?', country: 'Ganador Grupo D' }, '2C': { flag: '?', country: 'Segundo Grupo C' },
+            '1E': { flag: '?', country: 'Ganador Grupo E' }, '2F': { flag: '?', country: 'Segundo Grupo F' },
+            '1G': { flag: '?', country: 'Ganador Grupo G' }, '2H': { flag: '?', country: 'Segundo Grupo H' },
+            '1H': { flag: '?', country: 'Ganador Grupo H' }, '2G': { flag: '?', country: 'Segundo Grupo G' },
+            '1F': { flag: '?', country: 'Ganador Grupo F' }, '2E': { flag: '?', country: 'Segundo Grupo E' },
+        };
+
+        // Mapa arbitrario que asocia los calificadores de grupo (1A, 2B, etc.)
+        // con los IDs de los partidos de la fase de grupos cuyos ganadores los representarán.
+        const qualifierToMatchId = {
+            '1A': 'P1', '2B': 'P2',
+            '1C': 'P3', '2D': 'P4',
+            '1B': 'P5', '2A': 'P6',
+            '1D': 'P7', '2C': 'P8',
+            '1E': 'P9', '2F': 'P10',
+            '1G': 'P11', '2H': 'P12',
+            '1H': 'P13', '2G': 'P14',
+            '1F': 'P15', '2E': 'P16',
+            // Mappings for G-style dependencies (Quarter-finals onward)
+            'G49': 'P49', 'G50': 'P50', 'G51': 'P51', 'G52': 'P52',
+            'G53': 'P53', 'G54': 'P54', 'G55': 'P55', 'G56': 'P56',
+            'G57': 'P57', 'G58': 'P58', 'G59': 'P59', 'G60': 'P60',
+            'G61': 'P61', 'G62': 'P62',
+        };
+
+        let allMatches = []; // Global array to hold all match data
+
+        // Data de los partidos (copiada directamente del fixture proporcionado)
+        const rawFixture = `
+Fase de grupos del Mundial de Clubes 2025
+(Todos los horarios son locales de las ciudades correspondientes, actualizar a horario de Mendoza, Argentina)
+
+Sábado, 14 de junio de 2025
+Partido 1 – Inter Miami vs. Al Ahly, 20:00, Estadio Hard Rock, Miami
+
+Domingo, 15 de junio de 2025
+Partido 2: Bayern Munich vs. Auckland City FC, 12:00, Estadio TQL, Cincinnati
+Partido 3: PSG vs. Atlético de Madrid, 12:00, Estadio Rose Bowl, Los Ángeles
+Partido 4: Palmeiras vs. Porto, 18:00, Estadio MetLife, Nueva York Nueva Jersey
+Partido 5: Botafogo vs. Seattle Sounders, 19:00, Lumen Field, Seattle
+
+Lunes, 16 de junio de 2025
+Partido 6: Chelsea vs. Los Angeles FC, 15:00, Estadio Mercedes-Benz, Atlanta
+Partido 7: Boca vs. Benfica, 18:00, Estadio Hard Rock, Miami
+Partido 8: Flamengo vs. Esperance Sportive de Tunis, 21:00, Lincoln Financial Field, Filadelfia
+
+Martes, 17 de junio de 2025
+Partido 9: Fluminense vs. Borussia Dortmund, 12:00, Estadio MetLife, Nueva York Nueva Jersey
+Partido 10: River Plate vs. Urawa Red Diamonds, 12:00, Lumen Field, Seattle
+Partido 11: Ulsan HD vs. Mamelodi Sundowns FC, 18:00, Estadio Inter&Co, Orlando
+Partido 12: CF Monterrey vs. Inter de Milán, 18:00, Estadio Rose Bowl, Los Ángeles
+
+Miércoles, 18 de junio de 2025
+Partido 13: Manchester City vs. Wydad AC, 12:00, Lincoln Financial Field, Filadelfia
+Partido 14: Real Madrid vs. Al Hilal, 15:00, Estadio Hard Rock, Miami
+Partido 15: Pachuca vs. FC Salzburgo, 15:00, Estadio TQL, Cincinnati
+Partido 16: Al Ain FC vs. Juventus, 21:00, Washington D.C. Audi Field 
+
+Jueves, 19 de junio de 2025
+Partido 17: Palmeiras vs. Al Ahly FC, 12:00, Estadio MetLife, Nueva York Nueva Jersey
+Partido 18: Inter Miami vs. Oporto, 15:00, Estadio Mercedes-Benz, Atlanta
+Partido 19: Seattle Sounders vs. Atlético de Madrid, 15:00, Lumen Field, Seattle
+Partido 20: PSG vs. Botafogo, 18:00, Estadio Rose Bowl, Los Ángeles
+
+Viernes, 20 de junio de 2025
+Partido 21: Benfica vs. Auckland City, 12:00, Estadio Inter&Co, Orlando
+Partido 22: Flamengo vs. Chelsea, 14:00, Lincoln Financial Field, Filadelfia
+Partido 23: Los Angeles FC vs. Espérance Sportive de Tunisie, 17:00, GEODIS Park, Nashville  
+Partido 24: Bayern Munich vs. Boca Juniors, 21:00, Estadio Hard Rock, Miami
+
+Sábado, 21 de junio de 2025
+Partido 25: Mamelodi Sundowns FC vs. Borussia Dortmund, 12:00, Estadio TQL, Cincinnati
+Partido 26: Inter de Milán vs. Urawa Reds, 12:00, Lumen Field, Seattle
+Partido 27: Fluminense vs. Ulsan HD, 18:00, Estadio MetLife, Nueva York Nueva Jersey 
+Partido 28: River Plate vs. FC Monterrey, 18:00, Estadio Rose Bowl, Los Ángeles
+
+Domingo, 22 de junio de 2025
+Partido 29: Juventus vs. Wydad AC, 12:00, Lincoln Financial Field, Filadelfia
+Partido 30: Real Madrid vs. Pachuca, 15:00, Estadio Bank of America, Charlotte
+Partido 31: FC Salzburg vs. Al Hilal, 18:00, Washington D.C. Audi Field 
+Partido 32: Manchester City vs. Al Ain FC, 21:00, Estadio Mercedes-Benz, Atlanta
+
+Lunes, 23 de junio de 2025
+Partido 33: Seattle Sounders vs. PSG, 12:00, Lumen Field, Seattle
+Partido 34: Atlético de Madrid vs. Botafogo, 12:00, Estadio Rose Bowl, Los Ángeles
+Partido 35: Inter Miami vs. Palmeiras, 21:00, Estadio Hard Rock, Miami
+Partido 36: Porto vs. Al Ahly, 21:00, Estadio MetLife, Nueva York Nueva Jersey
+
+Martes, 24 de junio de 2025
+Partido 37: Auckland City vs. Boca, 14:00, GEODIS Park, Nashville  
+Partido 38: Benfica vs. Bayern Munich, 15:00, Estadio Bank of America, Charlotte
+Partido 39: Los Angeles FC vs. Flamengo, 21:00, Estadio Camping World, Orlando
+Partido 40: Espérance Sportive de Tunisie vs. Chelsea, 21:00, Lincoln Financial Field, Filadelfia
+
+Miércoles, 25 de junio de 2025
+Partido 41: Borussia Dortmund vs. Ulsan HD, 15:00, Estadio TQL, Cincinnati
+Partido 42: Mamelodi Sundowns FC vs. Fluminense, 15:00, Estadio Hard Rock, Miami
+Partido 43: Inter de Milán vs. River Plate, 18:00, Lumen Field, Seattle
+Partido 44: Urawa Red Diamonds vs. Monterrey FC, 18:00, Estadio Rose Bowl, Los Ángeles
+
+Jueves, 26 de junio de 2025
+Partido 45: Juventus vs. Manchester City, 15:00, Estadio Camping World, Orlando
+Partido 46: Wydad AC vs. Al Ain FC, 15:00, Washington D.C Audi Field
+Partido 47: Al Hilal  vs. Pachuca, 20:00, GEODIS Park, Nashville   
+Partido 48: FC Salzburgo vs. Real Madrid, 20:00, Lincoln Financial Field, Filadelfia
+
+Octavos de final
+
+Sábado, 28 de junio de 2025
+Partido 49: 1A vs. 2B, 12:00, Lincoln Financial Field, Filadelfia
+Partido 50: 1C vs. 2D, 16:00, Estadio Bank of America, Charlotte
+
+Domingo, 29 de junio de 2025
+Partido 51: 1B vs. 2A, 12:00, Estadio Mercedes-Benz, Atlanta
+Partido 52: 1D vs. 2C, 16:00, Estadio Hard Rock, Miami
+
+Lunes, 30 de junio de 2025 
+Partido 53: 1E vs. 2F, 15:00, Estadio Bank of America, Charlotte
+Partido 54: 1G vs. 2H, 21:00, Estadio Camping World, Orlando
+
+Martes, 1 de julio de 2025
+Partido 55: 1H vs. 2G, 15:00, Estadio Hard Rock, Miami
+Partido 56: 1F vs. 2E, 21:00, Estadio Mercedes-Benz, Atlanta
+
+Cuartos de final
+
+Viernes, 4 de julio de 2025 
+Partido 57: G53 vs. G54, 15:00, Estadio Camping World, Orlando
+Partido 58: G49 vs. G50, 21:00, Lincoln Financial Field, Filadelfia
+
+Sábado, 5 de julio de 2025
+Partido 59: G51 vs. G52, 12:00, Estadio Mercedes-Benz, Atlanta
+Partido 60: G55 vs. G56, 16:00, Estadio MetLife, Nueva York Nueva Jersey
+
+Semifinales
+
+Martes, 8 de julio de 2025
+Partido 61: G57 vs. G58, 15:00, Estadio MetLife, Nueva York Nueva Jersey
+
+Miércoles, 9 de julio de 2025
+Partido 62: G59 vs. G60, 15:00, Estadio MetLife, Nueva York Nueva Jersey
+
+Final
+
+Domingo, 13 de julio de 2025
+Partido 63: G61 vs. G62, 15:00, Estadio MetLife, Nueva York Nueva Jersey
+        `;
+
+        // Map of months for parsing dates
+        const monthMap = {
+            'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04',
+            'mayo': '05', 'junio': '06', 'julio': '07', 'agosto': '08',
+            'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12'
+        };
+
+        // Map of stadiums to cities (to standardize city names)
+        const stadiumToCityMap = {
+            'Estadio Hard Rock': 'Miami',
+            'Estadio TQL': 'Cincinnati',
+            'Estadio Rose Bowl': 'Los Ángeles',
+            'Estadio MetLife': 'Nueva York Nueva Jersey',
+            'Lumen Field': 'Seattle',
+            'Estadio Mercedes-Benz': 'Atlanta',
+            'Lincoln Financial Field': 'Filadelfia',
+            'Estadio Inter&Co': 'Orlando',
+            'GEODIS Park': 'Nashville',
+            'Estadio Bank of America': 'Charlotte',
+            'Estadio Camping World': 'Orlando',
+            'Washington D.C. Audi Field': 'Washington D.C.',
+            'Washington D.C Audi Field': 'Washington D.C.', // Handling slight variation
+        };
+
+        // Map of cities to their timezone offsets (EDT/PDT/CDT during June/July)
+        const timezoneMap = {
+            'Miami': '-04:00', // EDT
+            'Cincinnati': '-04:00', // EDT
+            'Los Ángeles': '-07:00', // PDT
+            'Nueva York Nueva Jersey': '-04:00', // EDT
+            'Seattle': '-07:00', // PDT
+            'Atlanta': '-04:00', // EDT
+            'Filadelfia': '-04:00', // EDT
+            'Orlando': '-04:00', // EDT
+            'Washington D.C.': '-04:00', // EDT
+            'Nashville': '-05:00', // CDT
+            'Charlotte': '-04:00', // EDT
+        };
+
+        /**
+         * Parses the raw fixture text into a structured array of match objects.
+         * @param {string} rawText The raw text string containing fixture data.
+         * @returns {Array<Object>} An array of match objects.
+         */
+        function parseFixtureData(rawText) {
+            const matches = [];
+            const lines = rawText.split('\n');
+
+            let currentStage = 'Fase de grupos'; // Default stage
+            let roundCounter = 1; // Default round
+            let lastParsedDateInfo = null; // Stores { day, month, year }
+
+            // Regex for lines that explicitly declare a date
+            const dateDeclarationRegex = /^(Sábado|Domingo|Lunes|Martes|Miércoles|Jueves|Viernes), (\d{1,2}) de (enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre) de (\d{4})/;
+            // Regex for lines that contain a match entry
+            const matchEntryRegex = /Partido (\d{1,2})( –|:)\s*(.+?) vs\. (.+?), (\d{2}:\d{2}),\s*(.+)/;
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) continue;
+
+                // 1. Check for stage headers
+                if (trimmedLine.includes('Fase de grupos del Mundial de Clubes 2025')) {
+                    currentStage = 'Fase de grupos';
+                    roundCounter = 1;
+                    continue;
+                } else if (trimmedLine.includes('Octavos de final')) {
+                    currentStage = 'Octavos de final';
+                    roundCounter = 2;
+                    continue;
+                } else if (trimmedLine.includes('Cuartos de final')) {
+                    currentStage = 'Cuartos de final';
+                    roundCounter = 3;
+                    continue;
+                } else if (trimmedLine.includes('Semifinales')) {
+                    currentStage = 'Semifinales';
+                    roundCounter = 4;
+                    continue;
+                } else if (trimmedLine.includes('Final')) {
+                    currentStage = 'Final';
+                    roundCounter = 5;
+                    continue;
+                } else if (trimmedLine.includes('(Todos los horarios son locales de las ciudades correspondientes')) {
+                    continue;
+                }
+
+                // 2. Attempt to parse a date declaration.
+                const dateDeclMatch = trimmedLine.match(dateDeclarationRegex);
+                if (dateDeclMatch) {
+                    lastParsedDateInfo = {
+                        day: dateDeclMatch[2].padStart(2, '0'),
+                        month: monthMap[dateDeclMatch[3].toLowerCase()],
+                        year: dateDeclMatch[4]
+                    };
+                    // Do NOT continue here, as a date line might also contain match entries
+                }
+
+                // 3. Attempt to parse a match entry.
+                const matchEntryMatch = trimmedLine.match(matchEntryRegex);
+
+                if (matchEntryMatch && lastParsedDateInfo) {
+                    const [, idNum, , team1Raw, team2Raw, time, fullLocationString] = matchEntryMatch;
+
+                    const dateString = `${lastParsedDateInfo.year}-${lastParsedDateInfo.month}-${lastParsedDateInfo.day}`;
+
+                    let stadium = fullLocationString.trim();
+                    let city = '';
+
+                    // Try to get city from stadiumToCityMap first
+                    const mappedCity = stadiumToCityMap[stadium];
+                    if (mappedCity) {
+                        city = mappedCity;
+                    } else {
+                        // If not found, try to split "Stadium, City" format
+                        const lastCommaIndex = stadium.lastIndexOf(',');
+                        if (lastCommaIndex > -1) {
+                            city = stadium.substring(lastCommaIndex + 1).trim();
+                            stadium = stadium.substring(0, lastCommaIndex).trim();
+                            // After splitting, try mapping the stadium part again
+                            const remappedCity = stadiumToCityMap[stadium];
+                            if (remappedCity) {
+                                city = remappedCity;
+                            }
+                        }
+                    }
+
+                    // Fallback if city still not reliably determined
+                    if (!city || !timezoneMap[city]) {
+                        console.warn(`Could not reliably determine city for match P${idNum} at location: "${fullLocationString}". Timezone might be incorrect or default to UTC.`);
+                        city = city || 'Desconocido'; // Default city if not found
+                    }
+
+                    const offset = timezoneMap[city] || '';
+                    const isoDateString = `${dateString}T${time}:00${offset}`;
+
+                    let team1 = team1Raw.trim();
+                    let team2 = team2Raw.trim();
+                    let dependsOn = [];
+
+                    // Handle placeholders for knockout stages (e.g., '1A', '2B', 'G53')
+                    if (team1.match(/^[1-2][A-H]$/) || team1.match(/^G\d+$/)) {
+                        dependsOn.push(team1.replace('G', 'P')); // Convert 'G53' to 'P53' for lookup
+                        team1 = null; // Mark as 'to be defined'
+                    }
+                    if (team2.match(/^[1-2][A-H]$/) || team2.match(/^G\d+$/)) {
+                        dependsOn.push(team2.replace('G', 'P')); // Convert 'G54' to 'P54' for lookup
+                        team2 = null; // Mark as 'to be defined'
+                    }
+
+                    matches.push({
+                        id: `P${idNum}`,
+                        stage: currentStage,
+                        round: roundCounter,
+                        team1: team1,
+                        team2: team2,
+                        score1: null,
+                        score2: null,
+                        winner: null,
+                        date: isoDateString,
+                        stadium: stadium,
+                        city: city,
+                        dependsOn: dependsOn.length > 0 ? dependsOn : undefined,
+                    });
+                }
+            }
+            return matches;
+        }
+
+        /**
+         * Updates a match's scores and winner, and propagates changes through the fixture.
+         * @param {string} matchId The ID of the match to update (e.g., 'P1').
+         * @param {number|null} score1 Score for team 1.
+         * @param {number|null} score2 Score for team 2.
+         * @param {string|null} winner The name of the winning team, or null if it's a draw or undecided.
+         */
+        function updateMatchAndPropagate(matchId, score1, score2, winner) {
+            let changesMade = true;
+            let iterationCount = 0;
+            const MAX_PROPAGATION_ITERATIONS = 10; // Safety limit
+
+            // Find and update the specific match
+            const matchToUpdateIndex = allMatches.findIndex(m => m.id === matchId);
+            if (matchToUpdateIndex !== -1) {
+                allMatches[matchToUpdateIndex] = { ...allMatches[matchToUpdateIndex], score1, score2, winner };
+            } else {
+                console.warn(`Match with ID ${matchId} not found.`);
+                return;
+            }
+
+            // Propagate changes through dependent matches
+            while (changesMade && iterationCount < MAX_PROPAGATION_ITERATIONS) {
+                changesMade = false;
+                iterationCount++;
+
+                const currentMatchesMap = new Map(allMatches.map(match => [match.id, match]));
+
+                for (let i = 0; i < allMatches.length; i++) {
+                    let matchInConsideration = allMatches[i];
+
+                    if (matchInConsideration.dependsOn) {
+                        let team1SourceId = matchInConsideration.dependsOn[0];
+                        let team2SourceId = matchInConsideration.dependsOn[1];
+
+                        team1SourceId = qualifierToMatchId[team1SourceId] || team1SourceId;
+                        team2SourceId = qualifierToMatchId[team2SourceId] || team2SourceId;
+
+                        const sourceMatch1 = currentMatchesMap.get(team1SourceId);
+                        const sourceMatch2 = currentMatchesMap.get(team2SourceId);
+
+                        let newTeam1 = matchInConsideration.team1;
+                        let newTeam2 = matchInConsideration.team2;
+                        let currentMatchUpdatedInLoop = false;
+
+                        if (sourceMatch1) {
+                            if (sourceMatch1.winner !== newTeam1) {
+                                newTeam1 = sourceMatch1.winner || null;
+                                currentMatchUpdatedInLoop = true;
+                            }
+                        } else if (newTeam1 !== null) {
+                            newTeam1 = null;
+                            currentMatchUpdatedInLoop = true;
+                        }
+
+                        if (sourceMatch2) {
+                            if (sourceMatch2.winner !== newTeam2) {
+                                newTeam2 = sourceMatch2.winner || null;
+                                currentMatchUpdatedInLoop = true;
+                            }
+                        } else if (newTeam2 !== null) {
+                            newTeam2 = null;
+                            currentMatchUpdatedInLoop = true;
+                        }
+
+                        if (currentMatchUpdatedInLoop) {
+                            allMatches[i] = {
+                                ...matchInConsideration,
+                                team1: newTeam1,
+                                team2: newTeam2,
+                                score1: null,
+                                score2: null,
+                                winner: null,
+                            };
+                            changesMade = true;
+                        }
+                    }
+                }
+            }
+            renderFixture(); // Re-render the entire fixture after updates
+        }
+
+        /**
+         * Formats an ISO date string to Argentina timezone.
+         * @param {string} isoString The ISO date string.
+         * @returns {string} Formatted date and time.
+         */
+        function formatTimeForArgentina(isoString) {
+            try {
+                const date = new Date(isoString);
+                const options = {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'America/Argentina/Buenos_Aires',
+                    hour12: false,
+                };
+                return date.toLocaleString('es-AR', options);
+            } catch (e) {
+                console.error("Error formatting date:", e);
+                return "Fecha y hora no válidas";
+            }
+        }
+
+        /**
+         * Displays a temporary message to the user.
+         * @param {HTMLElement} parentElement The element where the message will be appended.
+         * @param {string} msg The message text.
+         * @param {string} type 'success' or 'error' for styling.
+         */
+        function showMessage(parentElement, msg, type) {
+            let messageDiv = parentElement.querySelector('.message-display');
+            if (!messageDiv) {
+                messageDiv = document.createElement('div');
+                messageDiv.className = `message-display text-sm rounded-md p-2 mb-2`;
+                parentElement.prepend(messageDiv); // Prepend to appear at the top
+            }
+
+            messageDiv.textContent = msg;
+            messageDiv.classList.remove('bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
+            if (type === 'success') {
+                messageDiv.classList.add('bg-green-100', 'text-green-700');
+            } else {
+                messageDiv.classList.add('bg-red-100', 'text-red-700');
+            }
+
+            clearTimeout(messageDiv.timeoutId);
+            messageDiv.timeoutId = setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+
+        /**
+         * Creates and returns a DOM element for a single match card.
+         * @param {Object} match The match object.
+         * @returns {HTMLElement} The created match card element.
+         */
+        function createMatchCard(match) {
+            const card = document.createElement('div');
+            card.id = `match-${match.id}`; // Assign a unique ID for easy access
+            card.className = "bg-white p-4 m-2 rounded-lg shadow-md flex flex-col justify-between h-full w-full max-w-sm mx-auto match-card";
+
+            card.innerHTML = `
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                        Partido ${match.id.replace('P', '')}
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-1">
+                        <span class="font-medium">Fecha:</span> ${formatTimeForArgentina(match.date)} (ART)
+                    </p>
+                    <p class="text-sm text-gray-600 mb-3">
+                        <span class="font-medium">Estadio:</span> ${match.stadium}
+                    </p>
+                    <div class="flex justify-center items-center mb-2">
+                        <span class="text-gray-900 font-bold text-xl team1-name">${match.team1 || 'Por definir'}</span>
+                        <span class="mx-2 text-gray-700 text-lg">vs</span>
+                        <span class="text-gray-900 font-bold text-xl team2-name">${match.team2 || 'Por definir'}</span>
+                    </div>
+                    <div class="flex justify-center items-center space-x-2 mb-4">
+                        <input type="number" class="w-20 p-2 border border-gray-300 rounded-md text-center text-lg font-bold score1-input" placeholder="0" min="0" value="${match.score1 !== null ? match.score1 : ''}" ${!match.team1 || !match.team2 || match.winner ? 'disabled' : ''}>
+                        <span class="text-xl font-bold">-</span>
+                        <input type="number" class="w-20 p-2 border border-gray-300 rounded-md text-center text-lg font-bold score2-input" placeholder="0" min="0" value="${match.score2 !== null ? match.score2 : ''}" ${!match.team1 || !match.team2 || match.winner ? 'disabled' : ''}>
+                    </div>
+                    <p class="text-center text-green-700 font-bold mt-2 winner-display ${match.winner ? '' : 'hidden'}">
+                        Ganador: ${match.winner || ''}
+                    </p>
+                </div>
+                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-300 ease-in-out transform hover:scale-105 save-button ${!match.team1 || !match.team2 || match.winner ? 'hidden' : ''}">
+                    Guardar Resultado
+                </button>
+            `;
+
+            // Add event listeners
+            const saveButton = card.querySelector('.save-button');
+            if (saveButton) {
+                saveButton.addEventListener('click', () => {
+                    const score1Input = card.querySelector('.score1-input');
+                    const score2Input = card.querySelector('.score2-input');
+                    let score1 = score1Input.value === '' ? null : parseInt(score1Input.value, 10);
+                    let score2 = score2Input.value === '' ? null : parseInt(score2Input.value, 10);
+
+                    if (score1 === null || score2 === null || isNaN(score1) || isNaN(score2) || score1 < 0 || score2 < 0) {
+                        showMessage(card, 'Por favor, ingresa un resultado válido y no negativo para ambos equipos.', 'error');
+                        return;
+                    }
+
+                    let winner = null;
+                    if (score1 > score2) {
+                        winner = match.team1;
+                    } else if (score2 > score1) {
+                        winner = match.team2;
+                    } else {
+                        showMessage(card, 'Empate. En un torneo real, esto se resolvería con un desempate (ej. penales).', 'error');
+                        updateMatchAndPropagate(match.id, score1, score2, null);
+                        return;
+                    }
+
+                    showMessage(card, 'Resultado guardado y ganador avanzado!', 'success');
+                    updateMatchAndPropagate(match.id, score1, score2, winner);
+                });
+            }
+
+            return card;
+        }
+
+        /**
+         * Renders (or re-renders) the entire fixture in the DOM.
+         */
+        function renderFixture() {
+            const fixtureContainer = document.getElementById('fixture-container');
+            fixtureContainer.innerHTML = ''; // Clear existing content
+
+            // Group matches by round for rendering
+            const groupedMatches = allMatches.reduce((acc, match) => {
+                if (!acc[match.round]) {
+                    acc[match.round] = [];
+                }
+                acc[match.round].push(match);
+                return acc;
+            }, {});
+
+            const sortedRounds = Object.keys(groupedMatches).sort((a, b) => parseInt(a) - parseInt(b));
+
+            sortedRounds.forEach(roundNum => {
+                const roundMatches = groupedMatches[roundNum];
+                if (roundMatches.length === 0) return;
+
+                const roundDiv = document.createElement('div');
+                roundDiv.className = "flex flex-col items-center w-full my-4";
+
+                const roundTitle = document.createElement('h2');
+                roundTitle.className = "text-3xl font-bold text-cyan-600 mb-6 border-b-2 border-cyan-500 pb-2 text-center";
+                
+                let titleText = roundMatches[0].stage || `Ronda ${roundNum}`;
+                if (roundMatches[0].stage === 'Final') {
+                    titleText = `🏆 ${titleText} 🏆`;
+                }
+                roundTitle.textContent = titleText;
+                roundDiv.appendChild(roundTitle);
+
+                const matchesGrid = document.createElement('div');
+                matchesGrid.className = "flex flex-wrap justify-center gap-6 w-full"; // flex-wrap to ensure responsiveness
+
+                roundMatches.forEach(match => {
+                    const matchCard = createMatchCard(match);
+                    matchesGrid.appendChild(matchCard);
+                });
+                roundDiv.appendChild(matchesGrid);
+                fixtureContainer.appendChild(roundDiv);
+            });
+        }
+
+        // Initial load of the fixture when the window loads
+        window.onload = function() {
+            allMatches = parseFixtureData(rawFixture);
+            renderFixture();
+        };
+    </script>
+</body>
+</html>
