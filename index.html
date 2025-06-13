@@ -250,8 +250,8 @@ Partido 63: G61 vs. G62, 15:00, Estadio MetLife, Nueva York Nueva Jersey
             'GEODIS Park': 'Nashville',
             'Estadio Bank of America': 'Charlotte',
             'Estadio Camping World': 'Orlando',
-            'Washington D.C. Audi Field': 'Washington D.C.',
-            'Washington D.C Audi Field': 'Washington D.C.', // Handling slight variation
+            // Removed duplicate entry
+            'Washington D.C. Audi Field': 'Washington D.C.', // Canonical and covers 'Washington D.C Audi Field'
         };
 
         // Map of cities to their timezone offsets (EDT/PDT/CDT during June/July)
@@ -606,7 +606,7 @@ Partido 63: G61 vs. G62, 15:00, Estadio MetLife, Nueva York Nueva Jersey
         }
 
         /**
-         * Renders (or re-renders) the entire fixture in the DOM.
+         * Renders (o re-renders) the entire fixture in the DOM.
          */
         function renderFixture() {
             const fixtureContainer = document.getElementById('fixture-container');
